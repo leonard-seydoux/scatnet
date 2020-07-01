@@ -1,0 +1,114 @@
+# Sample parameter file for ScatNet 
+# ---------------------------------
+#
+# This file uses YAML (https://yaml.org) markup for defining the
+# parameters of any run. It uses the PYAML python library (https://pyyaml.org) 
+# in order to conver every entry here into python objects (dict, list, ...).
+#
+# According to the doc of PYAML, all the sections here are dictionaries
+# that are feed to the different functions in the main code. Please
+# refer to the use of these arguments in the main.py script, or in the
+# routines used by main.py in the scatnetflex package.
+# 
+# Author: Leonard Seydoux
+# Email: leonard.seydoux@gmail.com
+
+# Logging level
+# -------------
+#   Passed to the logging function directly.
+#   Possible levels are: INFO, DEBUG, WARNING, ERROR and CRITICAL.
+#   For more information, please refer to 
+#   https://docs.python.org/3/howto/logging.html
+logging: 
+    level: INFO
+
+# Dealing with data 
+# -----------------
+#   Used by the "reader" routine from scatnetflex/data.py.
+#   The batch processing allows for faster computation. The batch size is the
+#   number of random examples of data (of size patch_shape) that should be 
+#   given at the same time for one iteration. The patch shape should be designed
+#   in order to be way bigger than the window size, but to allow the data to
+#   fit into the GPU memory.
+data:
+    load:
+        decimation: 2
+        file_data: ./CI.LRL..HHZ
+        trim: [2019-07-04 00:00, 2019-07-04 17:00]
+    filter:
+        type: highpass
+        freq: 0.1
+        corners: 2
+    taper:
+        max_percentage: 0.5
+        max_length: 60
+    batch:
+        batch_size: 4
+        patch_shape: 16384
+
+# Scattering netowrk architecture
+# ----------------------------------
+#   These are the keyword arguments of the __init__ method of the
+#   ScatteringLayer class defined in scatnetflex/layer.py.
+layers:
+    # Layer-dedicated arguments
+    j: [4, 6, 8]
+    q: [8, 2, 1]
+    k: 7
+    pooling_type: average
+    decimation: 4
+    pooling: 1024
+
+    # Filter-dedicated keyword arguments
+    learn_scales: False
+    learn_knots: False
+    learn_filters: True
+    hilbert: True
+
+# Parent normalization arguments
+# ------------------------------
+#   Define the division regularizer with "eps_norm"
+#   and the logarithm regularizer with "eps_log".
+eps_norm: 0.001
+eps_log: 0.0001
+
+# Stochastic gradient descent
+# ---------------------------
+# Those values must be cross-validated once. The number of epochs
+# is the total number of iteration, and the rate is the delta step
+# used in the gradient descent on the Jacobian matrix in otrder to
+# perform the gradient descent.
+learning:
+    epochs: 3
+    rate: 0.001
+
+# Latent space dimension
+# ----------------------
+#   The number of components are the dimension of the low-dimension space.
+pca:
+    n_components: 5
+
+# Gaussian mixture model
+# -----------------------
+# GMM: These parameters are fixed for now.
+# GMM_INIT: the number of components are the number of clusters to look
+# for at the first epoch. The other parameters are the ones given to
+# the sklearn.mixture.GaussianMixture() object.
+gmm:
+    gmm_type: natural
+    trainable: False
+
+gmm_init:
+    n_components: 10
+    max_iter: 1000
+    covariance_type: full
+    warm_start: True
+
+# Output options
+# --------------
+# This defines the place where the results are stores.
+# A directory with the name of the run is created, and all the results 
+# stored there. A new run file will create a new directory. 
+summary:
+    path: ./summaries/
+    save_scat: 1000
